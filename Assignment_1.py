@@ -76,7 +76,7 @@ def main():
         y="sepal_width",
         z="petal_length",
         color="class",
-        title="3-D Scatter Plot for sepal length, sepal width and petal length:",
+        title="3-D Scatter Plot for sepal length, sepal width and petal length",
     )
     plot_4.show()
 

@@ -5,3 +5,7 @@
 #    pip-compile --output-file=requirements.txt requirements.in
 #
 numpy==1.18.4             # via -r requirements.in
+
+pandas~=1.1.1
+plotly~=4.9.0
+scikit-learn~=0.23.2

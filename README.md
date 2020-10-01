@@ -1,6 +1,6 @@
 # PythonProject
 
-# Setup for developement:
+# Setup for development:
 
 - Setup a python 3.x venv (usually in `.venv`)
   - You can run `./scripts/create-venv.sh` to generate one

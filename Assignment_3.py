@@ -79,10 +79,6 @@ def main():
         """
     )
 
-    # creating temporary view and persisting
-    rolling_average_df.createOrReplaceTempView("rolling_average")
-    rolling_average_df.persist(StorageLevel.DISK_ONLY)
-
     rolling_average_transform = MovingAverageTransform(
         inputCols=["Hits", "atBats"], outputCol="rolling_batting_average"
     )

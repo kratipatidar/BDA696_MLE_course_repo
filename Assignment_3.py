@@ -19,29 +19,29 @@ def main():
 
     df_batter_counts = (
         spark.read.format("jdbc")
-        .options(
+            .options(
             url=f"jdbc:mysql://localhost:{port}/{database}",
             driver="com.mysql.cj.jdbc.Driver",
             dbtable="batter_counts",
             user=user,
             password=password,  # pragma: allowlist secret
         )
-        .load()
+            .load()
     )
 
     df_batter_counts.show()
 
     df_game = (
         spark.read.format("jdbc")
-        .options(
+            .options(
             url=f"jdbc:mysql"
-            f"://localhost:{port}/{database}?zeroDateTimeBehavior=convertToNull",
+                f"://localhost:{port}/{database}?zeroDateTimeBehavior=convertToNull",
             driver="com.mysql.cj.jdbc.Driver",
             dbtable="game",
             user=user,
             password=password,  # pragma: allowlist secret
         )
-        .load()
+            .load()
     )
 
     df_game.show()
@@ -69,12 +69,12 @@ def main():
     rolling_average_df = spark.sql(
         """
         SELECT curr.game_id, curr.batter, SUM(hist.Hit) as Hits, \
-               SUM(hist.atBat) as atBats, hist.local_date \
+               SUM(hist.atBat) as atBats, curr.local_date \
         FROM   batters_in_game AS curr \
         JOIN   batters_in_game AS hist \
         ON     curr.batter = hist.batter \
         AND    curr.local_date > hist.local_date \
-        AND date_sub(curr.local_date, interval 100 day) < hist.local_date \
+        AND date_sub(curr.local_date, 100) < hist.local_date \
         GROUP BY curr.game_id, curr.batter, curr.local_date;
         """
     )
@@ -84,10 +84,11 @@ def main():
     rolling_average_df.persist(StorageLevel.DISK_ONLY)
 
     rolling_average_transform = MovingAverageTransform(
-        inputCols=["Hit", "atBat"], outputCol="rolling_batting_average"
+        inputCols=["Hits", "atBats"], outputCol="rolling_batting_average"
     )
     rolling_average_df = rolling_average_transform.transform(rolling_average_df)
     rolling_average_df.show()
 
-    if __name__ == "__main__":
-        sys.exit(main())
+
+if __name__ == "__main__":
+    sys.exit(main())

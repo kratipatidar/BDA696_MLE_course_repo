@@ -79,6 +79,7 @@ def main():
         """
     )
 
+
     rolling_average_transform = MovingAverageTransform(
         inputCols=["Hits", "atBats"], outputCol="rolling_batting_average"
     )

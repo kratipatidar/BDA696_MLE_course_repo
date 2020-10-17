@@ -69,25 +69,22 @@ def main():
     rolling_average_df = spark.sql(
         """
         SELECT curr.game_id, curr.batter, SUM(hist.Hit) as Hits, \
-               SUM(hist.atBat) as atBats, hist.local_date \
+               SUM(hist.atBat) as atBats, curr.local_date \
         FROM   batters_in_game AS curr \
         JOIN   batters_in_game AS hist \
         ON     curr.batter = hist.batter \
         AND    curr.local_date > hist.local_date \
-        AND date_sub(curr.local_date, interval 100 day) < hist.local_date \
+        AND date_sub(curr.local_date, 100) < hist.local_date \
         GROUP BY curr.game_id, curr.batter, curr.local_date;
         """
     )
 
-    # creating temporary view and persisting
-    rolling_average_df.createOrReplaceTempView("rolling_average")
-    rolling_average_df.persist(StorageLevel.DISK_ONLY)
-
     rolling_average_transform = MovingAverageTransform(
-        inputCols=["Hit", "atBat"], outputCol="rolling_batting_average"
+        inputCols=["Hits", "atBats"], outputCol="rolling_batting_average"
     )
     rolling_average_df = rolling_average_transform.transform(rolling_average_df)
     rolling_average_df.show()
 
-    if __name__ == "__main__":
-        sys.exit(main())
+
+if __name__ == "__main__":
+    sys.exit(main())

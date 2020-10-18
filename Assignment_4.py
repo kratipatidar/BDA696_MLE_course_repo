@@ -385,7 +385,7 @@ def main(input_file, response):
         output_df['diff_w_mean_plot'] = diff_w_mean_of_response_plots
 
     # saving the output to a HTML file
-    output_df.to_html("assignment_4_kratipatidar_cat_res.html", render_links=True, escape=False)
+    output_df.to_html("assignment_4_kratipatidar.html", render_links=True, escape=False)
 
 
 if __name__ == "__main__":

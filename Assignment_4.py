@@ -30,19 +30,11 @@ diff_w_mean_of_response_weighted_ranks = []
 diff_w_mean_of_response_plots = []
 random_for_imp = []
 
-# loading a test dataset to check the code
-boston = datasets.load_boston()
-boston_df = pd.DataFrame(boston.data, columns=boston.feature_names)
-boston_df["target"] = pd.Series(boston.target)
-boston_df.head()
 
-
-def main(input_file, response_column):
+def main(input_file, response):
     df = pd.read_csv(input_file)
-    df_preds = boston_df.loc[:, boston_df.columns != 'target']
+    df_preds = df.loc[:, df.columns != response]
     predictors = df_preds.columns
-    df = boston_df
-    response = 'target'
 
     # segregating the predictors into continuous and categorical predictors
     for col in predictors:
@@ -99,7 +91,6 @@ def main(input_file, response_column):
             )
 
         for i, p in enumerate(categorical_predictors):
-
             # distribution plot
             hist_data = [df[df[p] == 0][response], df[df[p] == 1][response]]
             group_labels = ["Group 1", "Group 2"]
@@ -122,41 +113,11 @@ def main(input_file, response_column):
                 '</a>'.format(p, p)
             )
 
-            # violin plot for the same
-            fig_j = go.Figure()
-            for curr_hist, curr_group in zip(hist_data, group_labels):
-                fig_j.add_trace(
-                    go.Violin(
-                        x=np.repeat(curr_group, len(df)),
-                        y=curr_hist,
-                        name=curr_group,
-                        box_visible=True,
-                        meanline_visible=True,
-                    )
-                )
-                fig_j.update_layout(
-                    title="Continuous Response by "
-                          "Categorical Predictor for Variable {}".format(p),
-                    xaxis_title="Response",
-                    yaxis_title="Distribution",
-                )
-                fig_j.show()
-                fig_j.write_html(
-                    file=f'~/plots/cont_res_cat_pred_violin_var_{p}.html',
-                    include_plotlyjs='cdn',
-                )
-                figures.append(
-                    '<a href =" ~/plots/cont_res_cat_pred_violin_var_{}.html">'
-                    'plot for {}'
-                    '</a>'.format(p, p)
-                )
-
-
     # categorical response with different cases
 
     elif response_type[0] == "categorical_response":
         for i, p in enumerate(continuous_predictors):
-            hist_data = [df[df[response] == 0][p], df[df[response] == 1][p]]
+            hist_data = [df[df[response] == 'B'][p], df[df[response] == 'M'][p]]
             group_labels = ["Response=0", "Response=1"]
 
             # distribution plot with custom bin size
@@ -179,37 +140,6 @@ def main(input_file, response_column):
                 'plot for {}'
                 '</a>'.format(p, p)
             )
-
-            # violin plot for the same
-
-            fig_j = go.Figure()
-            for curr_hist, curr_group in zip(hist_data, group_labels):
-                fig_j.add_trace(
-                    go.Violin(
-                        x=np.repeat(curr_group, len(df)),
-                        y=curr_hist,
-                        name=curr_group,
-                        box_visible=True,
-                        meanline_visible=True,
-                    )
-                )
-                fig_j.update_layout(
-                    title="Categorical Response by "
-                          "Continuous Predictor for Variable {}".format(p),
-                    xaxis_title="Response",
-                    yaxis_title="Distribution",
-                )
-                fig_j.show()
-                fig_j.write_html(
-                    file=f'~/plots/cat_res_cont_pred_violin_var_{p}.html',
-                    include_plotlyjs='cdn',
-                )
-                # adding the link to the figures list
-                figures.append(
-                    '<a href = "~/plots/cat_res_cont_pred_violin_var_{}.html">'
-                    'plot for {}'
-                    '</a>'.format(p, p)
-                )
 
         for i, p in enumerate(categorical_predictors):
             conf_matrix = confusion_matrix(df[p], df[response])
@@ -272,9 +202,10 @@ def main(input_file, response_column):
     # logistic regression rankings
 
     else:
-        y = df[response].values
+        y = df[response].astype('category').cat.codes
+
         for i, predictor in enumerate(predictors):
-            logistic_regression_model = statsmodels.api.Logit(df[response], df[predictor])
+            logistic_regression_model = statsmodels.api.Logit(y, df[predictor].values)
             logistic_regression_model_fitted = logistic_regression_model.fit()
             print("Variable: {}".format(predictor))
             print(logistic_regression_model_fitted.summary())
@@ -307,105 +238,106 @@ def main(input_file, response_column):
 
     # difference with mean of response rankings
 
-    for predictor in predictors:
-        predictors_bins.append(pd.cut(df[predictor], 10))
+    if response_type[0] == 'continuous_response':
+        for predictor in predictors:
+            predictors_bins.append(pd.cut(df[predictor], 10))
 
-    for predictor_bins in predictors_bins:
-        x = pd.DataFrame({"intervals": predictor_bins})
-        x["target"] = df[response]
-        x = x.groupby("intervals").agg({"intervals": "count", "target": "mean"})
-        x.columns = ["bin_counts", "bin_mean"]
-        x.reset_index(inplace=True)
-        x["pop_mean"] = df[response].mean()
-        lefts = []
-        rights = []
-        for interval in x.intervals:
-            lefts.append(interval.left)
-            rights.append(interval.right)
-        x['left'] = lefts
-        x['right'] = rights
-        x['centre'] = x['left'] + x['right'] / 2
-        x["mean_diff"] = x["pop_mean"] - x["bin_mean"]
-        x["mean_sq_diff"] = x["mean_diff"] ** 2
-        x["rank_val"] = x["mean_sq_diff"].sum() / len(x)
-        diff_w_mean_of_response.append(x)
+        for predictor_bins in predictors_bins:
+            x = pd.DataFrame({"intervals": predictor_bins})
+            x["target"] = df[response]
+            x = x.groupby("intervals").agg({"intervals": "count", "target": "mean"})
+            x.columns = ["bin_counts", "bin_mean"]
+            x.reset_index(inplace=True)
+            x["pop_mean"] = df[response].mean()
+            lefts = []
+            rights = []
+            for interval in x.intervals:
+                lefts.append(interval.left)
+                rights.append(interval.right)
+            x['left'] = lefts
+            x['right'] = rights
+            x['centre'] = x['left'] + x['right'] / 2
+            x["mean_diff"] = x["pop_mean"] - x["bin_mean"]
+            x["mean_sq_diff"] = x["mean_diff"] ** 2
+            x["rank_val"] = x["mean_sq_diff"].sum() / len(x)
+            diff_w_mean_of_response.append(x)
 
-    for x in diff_w_mean_of_response:
-        difference_w_mean_of_response_ranks.append(x.loc[0, 'rank_val'])
+        for x in diff_w_mean_of_response:
+            difference_w_mean_of_response_ranks.append(x.loc[0, 'rank_val'])
 
-    # weighted difference with mean of response
+        # weighted difference with mean of response
 
-    for predictor_bins in predictors_bins:
-        x = pd.DataFrame({"intervals": predictor_bins})
-        x["target"] = df[response]
-        x = x.groupby("intervals").agg({"intervals": "count", "target": "mean"})
-        x.columns = ["bin_counts", "bin_mean"]
-        x.reset_index(inplace=True)
-        x["pop_mean"] = df[response].mean()
-        lefts = []
-        rights = []
-        for interval in x.intervals:
-            lefts.append(interval.left)
-            rights.append(interval.right)
-        x['left'] = lefts
-        x['right'] = rights
-        x['centre'] = x['left'] + x['right'] / 2
-        x["mean_diff"] = x["pop_mean"] - x["bin_mean"]
-        x["mean_sq_diff"] = x["mean_diff"] ** 2
-        x["population_proportion"] = x["bin_counts"] / len(df)
-        x["mean_square_diff_weighted"] = (
-                x["population_proportion"] * x["mean_sq_diff"]
-        )
-        x['rank_val'] = x['mean_square_diff_weighted'].sum()
-        diff_w_mean_of_response_weighted.append(x)
+        for predictor_bins in predictors_bins:
+            x = pd.DataFrame({"intervals": predictor_bins})
+            x["target"] = df[response]
+            x = x.groupby("intervals").agg({"intervals": "count", "target": "mean"})
+            x.columns = ["bin_counts", "bin_mean"]
+            x.reset_index(inplace=True)
+            x["pop_mean"] = df[response].mean()
+            lefts = []
+            rights = []
+            for interval in x.intervals:
+                lefts.append(interval.left)
+                rights.append(interval.right)
+            x['left'] = lefts
+            x['right'] = rights
+            x['centre'] = x['left'] + x['right'] / 2
+            x["mean_diff"] = x["pop_mean"] - x["bin_mean"]
+            x["mean_sq_diff"] = x["mean_diff"] ** 2
+            x["population_proportion"] = x["bin_counts"] / len(df)
+            x["mean_square_diff_weighted"] = (
+                    x["population_proportion"] * x["mean_sq_diff"]
+            )
+            x['rank_val'] = x['mean_square_diff_weighted'].sum()
+            diff_w_mean_of_response_weighted.append(x)
 
-    for x in diff_w_mean_of_response_weighted:
-        diff_w_mean_of_response_weighted_ranks.append(x.loc[0, 'rank_val'])
+        for x in diff_w_mean_of_response_weighted:
+            diff_w_mean_of_response_weighted_ranks.append(x.loc[0, 'rank_val'])
 
-    # generating plots for difference with mean of response
+        # generating plots for difference with mean of response
 
-    for tdf in diff_w_mean_of_response:
-        diff_with_mean_plot = make_subplots(specs=[[{"secondary_y": True}]])
+        for i, tdf in enumerate(diff_w_mean_of_response):
+            diff_with_mean_plot = make_subplots(specs=[[{"secondary_y": True}]])
 
-        # adding traces
-        diff_with_mean_plot.add_trace(
-            go.Bar(
-                x=tdf["intervals"],
-                y=tdf["bin_counts"],
-                name=" Histogram",
-            ),
-            secondary_y=False,
-        )
+            # adding traces
+            diff_with_mean_plot.add_trace(
+                go.Bar(
+                    x=tdf["centre"],
+                    y=tdf["bin_counts"],
+                    name=" Histogram",
+                ),
+                secondary_y=False,
+            )
 
-        diff_with_mean_plot.add_trace(
-            go.Scatter(
-                x=tdf["centre"],
-                y=tdf["bin_mean"],
-                name="Bin Mean",
-                line=dict(color="red"),
-            ),
-            secondary_y=True,
-        )
+            diff_with_mean_plot.add_trace(
+                go.Scatter(
+                    x=tdf["centre"],
+                    y=tdf["bin_mean"],
+                    name="Bin Mean",
+                    line=dict(color="red"),
+                ),
+                secondary_y=True,
+            )
 
-        diff_with_mean_plot.add_trace(
-            go.Scatter(
-                x=tdf["centre"],
-                y=tdf["pop_mean"],
-                name="Population Mean",
-                line=dict(color="green"),
-            ),
-            secondary_y=True,
-        )
-        diff_with_mean_plot.show()
-        diff_with_mean_plot.write_html(
-            file=f'~/plots/difference_with_mean_var_{p}.html',
-            include_plotlyjs='cdn',
-        )
-        diff_w_mean_of_response_plots.append(
-            '<a href = "~/plots/difference_with_mean_var_{}.html">'
-            'plot for {}'
-            '</a>'.format(p, p)
-        )
+            diff_with_mean_plot.add_trace(
+                go.Scatter(
+                    x=tdf["centre"],
+                    y=tdf["pop_mean"],
+                    name="Population Mean",
+                    line=dict(color="green"),
+                ),
+                secondary_y=True,
+            )
+            diff_with_mean_plot.show()
+            diff_with_mean_plot.write_html(
+                file=f'~/plots/difference_with_mean_for_var_{i}.html',
+                include_plotlyjs='cdn',
+            )
+            diff_w_mean_of_response_plots.append(
+                '<a href = "~/plots/difference_with_mean_var_{}.html">'
+                'plot for predictor {}'
+                '</a>'.format(i, i)
+            )
 
     # random forest variable importance ranking
     if response_type[0] == "continuous_response":
@@ -413,7 +345,7 @@ def main(input_file, response_column):
         rand_imp = RandomForestRegressor(
             n_estimators=65, oob_score=True, random_state=4
         )
-        rand_imp.fit(df, df[response].values)
+        rand_imp.fit(df_preds, df[response].values)
         importance = rand_imp.feature_importances_
         random_for_imp.append(importance)
     else:
@@ -423,7 +355,7 @@ def main(input_file, response_column):
         rand_imp = RandomForestClassifier(
             n_estimators=65, oob_score=True, random_state=4
         )
-        rand_imp.fit(df, df[response])
+        rand_imp.fit(df_preds, df[response])
         importance = rand_imp.feature_importances_
         random_for_imp.append(importance)
 
@@ -442,22 +374,21 @@ def main(input_file, response_column):
     # assigning values to each column
     output_df['predictor'] = predictors
     output_df['predictor_type'] = predictor_type
-    output_df['link_to_plot'] = figures
+    output_df['link_to_plot'] = figures[0:len(predictors)]
     output_df['p_value'] = p_values
     output_df['t_value'] = t_values
-    output_df['diff_w_mean'] = difference_w_mean_of_response_ranks
-    output_df['diff_w_mean_weighted'] = diff_w_mean_of_response_weighted_ranks
-    output_df['random_for_imp'] = random_for_imp
-    output_df['diff_w_mean_plot'] = diff_with_mean_plot
-
-    # sorting the output_df
-    sorted_df = output_df.sort_values(by=['t_value'], ascending=False)
+    output_df['random_for_imp'] = random_for_imp[0].tolist()
+    # now we check to see if the response is continuous in order to append diff_w_mean columns
+    if response_type == 'continuous_response':
+        output_df['diff_w_mean'] = difference_w_mean_of_response_ranks
+        output_df['diff_w_mean_weighted'] = diff_w_mean_of_response_weighted_ranks
+        output_df['diff_w_mean_plot'] = diff_w_mean_of_response_plots
 
     # saving the output to a HTML file
-    sorted_df.to_html("assignment_4_kratipatidar.html", render_links=True, escape=False)
+    output_df.to_html("assignment_4_kratipatidar_cat_res.html", render_links=True, escape=False)
 
 
 if __name__ == "__main__":
     input_file = sys.argv[1]
-    response_column = sys.argv[2]
-    sys.exit(main(input_file, response_column))
+    response = sys.argv[2]
+    sys.exit(main(input_file, response))

@@ -33,6 +33,7 @@ random_for_imp = []
 
 def main(input_file, response):
     df = pd.read_csv(input_file)
+    df.dropna(axis=1)
     df_preds = df.loc[:, df.columns != response]
     predictors = df_preds.columns
 
@@ -45,12 +46,15 @@ def main(input_file, response):
         else:
             continuous_predictors.append(col)
 
+    predictors = continuous_predictors + categorical_predictors
+
     # making a list of predictor types
     for pred in predictors:
         if pred in continuous_predictors:
             predictor_type.append('continuous')
         else:
             predictor_type.append('categorical')
+
 
     # determining whether response variable is categorical or continuous
 
@@ -260,6 +264,7 @@ def main(input_file, response):
         predictors_bins.append(pd.cut(df[predictor], 10))
     for predictor_bins in predictors_bins:
         x = pd.DataFrame({"intervals": predictor_bins})
+        
         if response_type[0] == 'continuous_response':
             x["target"] = df[response]
         else:
@@ -401,7 +406,7 @@ def main(input_file, response):
                 include_plotlyjs='cdn',
             )
         diff_w_mean_of_response_plots.append(
-                '<a href = "~/plots/difference_with_mean_var_{}.html">'
+                '<a href = "~/plots/difference_with_mean_for_var_{}.html">'
                 'plot for predictor {}'
                 '</a>'.format(i, i)
         )
@@ -441,16 +446,20 @@ def main(input_file, response):
     # assigning values to each column
     output_df['predictor'] = predictors
     output_df['predictor_type'] = predictor_type
-    output_df['link_to_plot'] = figures[0:len(predictors)]
+    output_df['link_to_plot'] = figures
     output_df['p_value'] = p_values
     output_df['t_value'] = t_values
+    if response_type == 'continuous_response':
+        output_df['p_val_and_t_val_plots'] = lr_plots
+    else:
+        output_df['p_val_and_t_val_plots'] = logr_plots
     output_df['random_for_imp'] = random_for_imp[0].tolist()
     output_df['diff_w_mean'] = difference_w_mean_of_response_ranks
     output_df['diff_w_mean_weighted'] = diff_w_mean_of_response_weighted_ranks
     output_df['diff_w_mean_plot'] = diff_w_mean_of_response_plots
 
     # saving the output to a HTML file
-    output_df.to_html("assignment_4_kratipatidar.html", render_links=True, escape=False)
+    output_df.to_html("assignment_4_kratipatidar_cancer.html", render_links=True, escape=False)
 
 
 if __name__ == "__main__":

@@ -449,7 +449,7 @@ def main(input_file, response):
     output_df['link_to_plot'] = figures
     output_df['p_value'] = p_values
     output_df['t_value'] = t_values
-    if response_type == 'continuous_response':
+    if response_type[0] == 'continuous_response':
         output_df['p_val_and_t_val_plots'] = lr_plots
     else:
         output_df['p_val_and_t_val_plots'] = logr_plots
@@ -459,7 +459,7 @@ def main(input_file, response):
     output_df['diff_w_mean_plot'] = diff_w_mean_of_response_plots
 
     # saving the output to a HTML file
-    output_df.to_html("assignment_4_kratipatidar_cancer.html", render_links=True, escape=False)
+    output_df.to_html("assignment_4_kratipatidar.html", render_links=True, escape=False)
 
 
 if __name__ == "__main__":

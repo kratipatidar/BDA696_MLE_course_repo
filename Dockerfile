@@ -19,7 +19,7 @@ RUN useradd --system --user-group --shell /sbin/nologin services
 USER services
 
 # Run app
-CMD assignment_5_bash.sh  --bind :$PORT
+CMD assignment_5_bash.sh  
 
 
 

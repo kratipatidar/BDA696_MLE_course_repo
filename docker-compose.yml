@@ -1,0 +1,28 @@
+version: "3.3"
+
+services:
+  mariadb_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mariadb
+    ports:
+      - "5000:8080"
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+    restart: unless-stopped
+    volumes:
+      - "./baseball.sql:/app/baseball.sql"
+
+  rolling_average_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rolling_average_service
+    ports:
+      - "5001:8080"
+    environment:
+      PORT: "8080"
+    restart: unless-stopped
+    volumes:
+      - "./assignment_5_sql:/app/results.csv"

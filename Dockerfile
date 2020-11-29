@@ -1,7 +1,7 @@
 FROM ubuntu
 
 
-
+WORKDIR ./assignment_5
 # Get necessary system packages
 RUN apt-get update \
   && apt-get install --no-install-recommends --yes \
@@ -20,7 +20,9 @@ RUN useradd --system --user-group --shell /sbin/nologin services
 USER services
 
 # Run app
-CMD chmod + x assignment_5_bash.sh  
+RUN chmod + x assignment_5_bash.sh  
+
+CMD assignment_5_bash.sh
 
 
 

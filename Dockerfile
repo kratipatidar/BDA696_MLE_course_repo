@@ -6,6 +6,7 @@ FROM ubuntu
 RUN apt-get update \
   && apt-get install --no-install-recommends --yes \
      build-essential \
+     mariadb-client \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy over code
@@ -19,7 +20,7 @@ RUN useradd --system --user-group --shell /sbin/nologin services
 USER services
 
 # Run app
-CMD assignment_5_bash.sh  
+CMD chmod + x assignment_5_bash.sh  
 
 
 

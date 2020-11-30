@@ -1,28 +1,13 @@
 FROM ubuntu
 
-
-WORKDIR .
 # Get necessary system packages
 RUN apt-get update \
-  && apt-get install --no-install-recommends --yes \
-     build-essential \
+  && apt-get install --yes \
      mariadb-client \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy over code
-COPY assignment_5_sql.sql assignment_5_sql.sql
-COPY assignment_5_bash.sh assignment_5_bash.sh
+COPY assignment_5_sql.sql /scripts/assignment_5_sql.sql
+COPY assignment_5_bash.sh /scripts/assignment_5_bash.sh
 
-# Create an unprivileged user
-RUN useradd --system --user-group --shell /sbin/nologin services
-
-# Switch to the unprivileged user
-USER services
-
-# Run app
-RUN chmod+x assignment_5_bash.sh  
-
-CMD assignment_5_bash.sh
-
-
-
+CMD ["/scripts/assignment_5_bash.sh"]

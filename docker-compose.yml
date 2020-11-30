@@ -1,28 +1,33 @@
 version: "3.3"
 
 services:
-  mariadb_service:
-      context: .
-      dockerfile: Dockerfile
-    image: mariadb
-    ports:
-      - "3306"
+  mariadb-service:
+    container_name: mariadb-service
+    image: linuxserver/mariadb:latest
     environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: "True"
+      PUID: 1000
+      PGID: 1000
+      MYSQL_USER: root
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
     restart: unless-stopped
     volumes:
-      - "./baseball.sql:./baseball.sql"
+      - ./db:/config
+    networks:
+      - backend
 
-  rolling_average_service:
+  rolling-average-service-krati:
     depends_on:
-      - mariadb_service
+      - mariadb-service
     build:
       context: .
       dockerfile: Dockerfile
-    image: maria_db
-    ports:
-      - "8080"
-    environment:
-      - MYSQL_ALLOW_EMPTY_PASSWORD="True"
-    restart: unless-stopped
-    
+    image: rolling-average-service
+    volumes:
+      - ./results:/results
+      - ./baseball.sql:/data/baseball.sql
+    networks:
+      - backend
+
+networks:
+  backend:

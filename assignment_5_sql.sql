@@ -12,8 +12,3 @@ ON a.batter = b.batter
 AND b.local_date > DATE_SUB(a.local_date, INTERVAL 100 DAY) AND a.local_date > b.local_date
 WHERE a.game_id = 12560      -- comment out this line to get the rolling batting average for all the players across all games
 GROUP BY a.game_id, a.batter, a.local_date;
-                                                            
--- saving results to a csv file
-                                                            
-SELECT * FROM rolling_ba_100_days
-INTO OUTFILE './results.csv' ;  

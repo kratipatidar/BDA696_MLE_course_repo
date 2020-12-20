@@ -1,0 +1,37 @@
+version: "3.3"
+
+services:
+  mariadb-service-two:
+    container_name: mariadb-service-two
+    image: linuxserver/mariadb:latest
+    environment:
+      PUID: 1000
+      PGID: 1000
+      MYSQL_USER: root
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+    restart: unless-stopped
+    volumes:
+      - ./db:/config
+    networks:
+      - backend
+
+  final-project-service-krati:
+    depends_on:
+      - mariadb-service-two
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: final-project-service-krati
+    volumes:
+      - ./correlation_table:/correlation_table
+      - ./Final_Model_Performance:/Final_Model_Performance
+      - ./krati_patidar_FP1_table1:/krati_patidar_FP1_table1
+      - ./krati_patidar_FP1_table2:/krati_patidar_FP1_table2
+      - ./krati_patidar_FP1_table3:/krati_patidar_FP1_table3
+      - ./baseball1.sql:/data/baseball.sql
+    networks:
+      - backend
+
+networks:
+  backend:

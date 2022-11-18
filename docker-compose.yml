@@ -1,0 +1,33 @@
+version: "3.3"
+
+services:
+  mariadb-service:
+    container_name: mariadb-service
+    image: linuxserver/mariadb:latest
+    environment:
+      PUID: 1000
+      PGID: 1000
+      MYSQL_USER: root
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+    restart: unless-stopped
+    volumes:
+      - ./db:/config
+    networks:
+      - backend
+
+  rolling-average-service-krati:
+    depends_on:
+      - mariadb-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rolling-average-service
+    volumes:
+      - ./results:/results
+      - ./baseball.sql:/data/baseball.sql
+    networks:
+      - backend
+
+networks:
+  backend:
